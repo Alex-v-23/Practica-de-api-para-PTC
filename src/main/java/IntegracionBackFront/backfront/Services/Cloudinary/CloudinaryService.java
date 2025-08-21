@@ -1,55 +1,51 @@
 package IntegracionBackFront.backfront.Services.Cloudinary;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.Arrays;
-
-import static com.sun.tools.javac.resources.CompilerProperties.Errors.IoException;
+import java.util.Map;
 
 @Service
 public class CloudinaryService {
 
-    //1. Determinar el tamaño de las iagenes en MB
+    //1. Constante para definir el tamaño maximo definido para los archivos (5MB)
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
-    //2. Definir las extenciones permitidas
-    private static final String[] ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"};
-    //3. Atributo cloudinary
+
+    //2. Extenciones de archivo permitido para subir a coudinary
+    private static final String[] ALLOWED_EXTENSIONS = {".jpg", ".png",".jpeg"};
+
+    //3. Cliente de cloudinary inyecta como dependencis
     private final Cloudinary cloudinary;
-    //Contructor para inyectar la dependencia de cloudinary
-    public CloudinaryService(Cloudinary cloudinary){
+
+    public CloudinaryService(Cloudinary cloudinary) {
         this.cloudinary = cloudinary;
     }
 
-    public String uploadImage(MultipartFile file)throws IOException{
-        validateImagen(file);
+    //Subir imagen a la raiz de clodinary
+    public String uploadImage(MultipartFile file) throws IOException {
+        validateImage(file);
 
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "resource_type", "auto",
+                "quality", "auto:good"
+        ));
+        return (String) uploadResult.get("secure_url");
     }
 
-    private void validateImagen(MultipartFile file) {
-        //1. Verificar si el archivo esta vacio
-        if(file.isEmpty()){
-            throw new IllegalArgumentException("El archivo esta vacio");
-        }
-        //2. Verificar si el tamaño excede el limite permitido
-        if (file.getSize() > MAX_FILE_SIZE){
-            throw new IllegalArgumentException("El tamaño del archivo no debe de ser mayor a 5MB");
-        }
-        //3. Verificar el nombre original del archivo
-        String origianlFileName = file.getOriginalFilename();
-        if (origianlFileName == null){
-            throw new IllegalArgumentException("Nombre del archivo invalido");
-        }
-        //4. Extraer y validar la extencion del archivo
-        String extension = origianlFileName.substring(origianlFileName.lastIndexOf(".")).toLowerCase();
-        if (!Arrays.asList(ALLOWED_EXTENSIONS).contains(extension)){
-            throw new IllegalArgumentException("Solo se permite archivo JPG, JPEG, PNG");
-        }
-        //5.vERIFICAR QUE EL TIPO MINE SEA UNA IMAGEN
-        if (!file.getContentType().startsWith("image/")){
-            throw new IllegalArgumentException("El archivo debe ser una imagen valida");
-        }
+    private void validateImage(MultipartFile file) {
+        if (file.isEmpty()) throw  new IllegalArgumentException("El archivo no puede estar vacio"); //1. verifica si e archivo esta vacio
+        if (file.getSize()> MAX_FILE_SIZE) throw new IllegalArgumentException("El tamaño del archivo no puede exceder de 5MB"); //2. verificar si el archivo excede del tamaño limite
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) throw new IllegalArgumentException("Nombre del archivo no valido"); //3. valida el nombre del archivo
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        if (!Arrays.asList(ALLOWED_EXTENSIONS).contains(extension)) throw new IllegalArgumentException("Solo se aceptan archivos jpg, jpeg, png");
+        if (!file.getContentType().startsWith("image/")) throw new IllegalArgumentException("El archivo debe ser una imagen valida");
+
     }
+    //Subir imagenes a una carpeta de cloudinary
 }
