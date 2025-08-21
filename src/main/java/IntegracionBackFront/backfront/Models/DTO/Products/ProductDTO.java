@@ -1,5 +1,6 @@
 package IntegracionBackFront.backfront.Models.DTO.Products;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -31,4 +32,7 @@ public class ProductDTO {
     private LocalDate fechaIngreso;
     private Long categoriaId;
     private int usuarioId; //Usuario que lo registro
+    @Column(name = "IMAGEN_URL")
+    private String imagen_url;
+
 }
